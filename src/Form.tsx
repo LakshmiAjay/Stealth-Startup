@@ -9,18 +9,17 @@ interface FormField {
 }
 
 interface FormData {
-  userInfo: {
-    fields: FormField[];
-  };
-  addressInfo: {
-    fields: FormField[];
-  };
-  paymentInfo: {
-    fields: FormField[];
-  };
-}
+    [key: string]: {
+      fields: any[]; // fields can contain any type of data
+    };
+  }
 
-const formData: FormData = {
+const formData: any = {
+    Select: {
+        fields: [   ]
+      },
+    
+
   userInfo: {
     fields: [
       { name: "firstName", type: "text", label: "First Name", required: true },
@@ -47,11 +46,11 @@ const formData: FormData = {
 };
 
 const Form: React.FC = () => {
-  const [formType, setFormType] = useState<keyof FormData>('userInfo');
-  const [formFields, setFormFields] = useState<FormField[]>(formData.userInfo.fields);
+  const [formType, setFormType] = useState<keyof FormData>('Select');
+  const [formFields, setFormFields] = useState<FormField[]>(formData.Select.fields);
   const [formDataState, setFormData] = useState<any>({});
   const [submittedData, setSubmittedData] = useState<any[]>([]);
-  const [selectedDataType, setSelectedDataType] = useState<string>('');
+  const [selectedDataType, setSelectedDataType] = useState<string>('userInfo');
   const [errorMessages, setErrorMessages] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
@@ -160,13 +159,26 @@ const Form: React.FC = () => {
   return (
     <div className="form-container">
       <h2>Dynamic Form</h2>
+      
+      <select
+  onChange={(e) => {
+    setFormType(e.target.value as keyof FormData); 
+    setSelectedDataType(e.target.value);
+  }}
+  value={formType}
+  className="form-dropdown"
+>
+<option value="Select">Select</option>
 
-      <select onChange={(e) => {setFormType(e.target.value as keyof FormData); setSelectedDataType(e.target.value as keyof FormData);}} value={formType} className="form-dropdown">
-        <option value="userInfo">User Information</option>
-        <option value="addressInfo">Address Information</option>
-        <option value="paymentInfo">Payment Information</option>
-      </select>
-
+  {Object.keys(formData).map((key) => (
+    key !== 'Select' && (  
+      <option key={key} value={key}>
+        {key.replace(/([A-Z])/g, ' $1').trim()} 
+      </option>
+    )
+  ))}
+</select>
+      {formFields.length>0 &&<>
       <div className="progress-bar-container">
         <label>Progress: {calculateProgress()}%</label>
         <div className="progress-bar">
@@ -176,7 +188,7 @@ const Form: React.FC = () => {
 
       <form onSubmit={handleSubmit}>
         <div className="form-box">
-          {formFields.map((field) => (
+          { formFields.map((field) => (
             <div key={field.name} className="form-field">
               <label>{field.label} {field.required && '*'}</label>
               {field.type === "dropdown" ? (
@@ -218,7 +230,7 @@ const Form: React.FC = () => {
             {loading ? <div className="spinner"></div> : "Submit"}
           </button>
         </div>
-      </form>
+      </form></>}
 
       {selectedDataType && filteredData.length > 0 && (
         <div className="submitted-data">
@@ -226,7 +238,7 @@ const Form: React.FC = () => {
           <table>
             <thead>
               <tr>
-                {formData[selectedDataType as keyof FormData].fields.map((field) => (
+                {formData[selectedDataType as keyof FormData].fields.map((field:any) => (
                   <th key={field.name}>{field.label}</th>
                 ))}
                 <th>Actions</th>
@@ -235,7 +247,7 @@ const Form: React.FC = () => {
             <tbody>
               {filteredData.map((data, index) => (
                 <tr key={index}>
-                  {formData[selectedDataType as keyof FormData].fields.map((field) => (
+                  {formData[selectedDataType as keyof FormData].fields.map((field:any) => (
                     <td key={field.name}>{data.data[field.name]}</td>
                   ))}
                   <td>
