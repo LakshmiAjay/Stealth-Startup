@@ -5,42 +5,42 @@ interface FormField {
   type: string;
   label: string;
   required: boolean;
-  options?: string[]; 
+  options?: string[];
 }
 
 interface FormData {
-    [key: string]: {
-      fields: any[]; // fields can contain any type of data
-    };
-  }
+  [key: string]: {
+    fields: any[];
+  };
+}
 
 const formData: any = {
-    Select: {
-        fields: [   ]
-      },
-    
-
+  Select: {
+    fields: []
+  },
   userInfo: {
     fields: [
-      { name: "firstName", type: "text", label: "First Name", required: true },
-      { name: "lastName", type: "text", label: "Last Name", required: true },
-      { name: "age", type: "number", label: "Age", required: false }
+      { name: 'firstName', type: 'text', label: 'First Name', required: true },
+      { name: 'lastName', type: 'text', label: 'Last Name', required: true },
+      { name: 'age', type: 'number', label: 'Age', required: false },
+      { name: 'aadhar', type: 'file', label: 'Upload Aadhar', required: false }
     ]
   },
   addressInfo: {
     fields: [
-      { name: "street", type: "text", label: "Street", required: true },
-      { name: "city", type: "text", label: "City", required: true },
-      { name: "state", type: "dropdown", label: "State", options: ["California", "Texas", "New York"], required: true },
-      { name: "zipCode", type: "text", label: "Zip Code", required: false }
+      { name: 'street', type: 'text', label: 'Street', required: true },
+      { name: 'city', type: 'text', label: 'City', required: true },
+      { name: 'state', type: 'dropdown', label: 'State', options: ['California', 'Texas', 'New York'], required: true },
+      { name: 'zipCode', type: 'text', label: 'Zip Code', required: false }
     ]
   },
   paymentInfo: {
     fields: [
-      { name: "cardNumber", type: "text", label: "Card Number", required: true },
-      { name: "expiryDate", type: "date", label: "Expiry Date", required: true },
-      { name: "cvv", type: "password", label: "CVV", required: true },
-      { name: "cardholderName", type: "text", label: "Cardholder Name", required: true }
+      { name: 'cardNumber', type: 'text', label: 'Card Number', required: true },
+      { name: 'expiryDate', type: 'date', label: 'Expiry Date', required: true },
+      { name: 'cvv', type: 'password', label: 'CVV', required: true },
+      { name: 'cardholderName', type: 'text', label: 'Cardholder Name', required: true },
+      { name: 'Reciept', type: 'file', label: 'Receipt', required: false }
     ]
   }
 };
@@ -54,12 +54,13 @@ const Form: React.FC = () => {
   const [errorMessages, setErrorMessages] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
-  
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
-
+  const [showFileSuccessModal,setshowFileSuccessModal]= useState(false);
+  const [UploadedFileName,setUploadedFileName]=useState('')
+  
   useEffect(() => {
     const fields = formData[formType].fields;
     setFormFields(fields);
@@ -87,7 +88,11 @@ const Form: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target;
     if (files && files[0]) {
-      setFormData({ ...formDataState, [name]: files[0] });
+      const file = files[0];
+      setFormData({ ...formDataState, [name]: file.name }); 
+      setUploadedFileName(file.name); 
+
+      setshowFileSuccessModal(true)
     }
   };
 
@@ -112,13 +117,16 @@ const Form: React.FC = () => {
           const updatedData = [...submittedData];
           updatedData[editIndex] = newData;
           setSubmittedData(updatedData);
+
           setEditIndex(null);
         } else {
           setSubmittedData([...submittedData, newData]);
+
         }
+        setShowSuccessModal(true);
+
         setFormData({});
         setLoading(false);
-        setShowSuccessModal(true);
       }, 2000);
     } else {
       setShowErrorModal(true);
@@ -132,13 +140,13 @@ const Form: React.FC = () => {
 
   const handleEdit = (index: number) => {
     const dataToEdit = submittedData[index];
-    setFormData(dataToEdit.data); 
-    setEditIndex(index); 
+    setFormData(dataToEdit.data);
+    setEditIndex(index);
   };
 
   const handleDelete = (index: number) => {
     setDeleteIndex(index);
-    setShowDeleteModal(true); 
+    setShowDeleteModal(true);
   };
 
   const confirmDelete = () => {
@@ -146,12 +154,12 @@ const Form: React.FC = () => {
       const updatedData = submittedData.filter((_, i) => i !== deleteIndex);
       setSubmittedData(updatedData);
       setShowDeleteModal(false);
-      setShowSuccessModal(true); 
+      setShowSuccessModal(true);
     }
   };
 
   const cancelDelete = () => {
-    setShowDeleteModal(false); 
+    setShowDeleteModal(false);
   };
 
   const filteredData = submittedData.filter(data => data.formType === selectedDataType);
@@ -159,78 +167,85 @@ const Form: React.FC = () => {
   return (
     <div className="form-container">
       <h2>Dynamic Form</h2>
-      
+
       <select
-  onChange={(e) => {
-    setFormType(e.target.value as keyof FormData); 
-    setSelectedDataType(e.target.value);
-  }}
-  value={formType}
-  className="form-dropdown"
->
-<option value="Select">Select</option>
+        onChange={(e) => {
+          setFormType(e.target.value as keyof FormData);
+          setSelectedDataType(e.target.value);
+        }}
+        value={formType}
+        className="form-dropdown"
+      >
+        <option value="Select">Select</option>
+        {Object.keys(formData).map((key) => (
+          key !== 'Select' && (
+            <option key={key} value={key}>
+              {key.replace(/([A-Z])/g, ' $1').trim()}
+            </option>
+          )
+        ))}
+      </select>
 
-  {Object.keys(formData).map((key) => (
-    key !== 'Select' && (  
-      <option key={key} value={key}>
-        {key.replace(/([A-Z])/g, ' $1').trim()} 
-      </option>
-    )
-  ))}
-</select>
-      {formFields.length>0 &&<>
-      <div className="progress-bar-container">
-        <label>Progress: {calculateProgress()}%</label>
-        <div className="progress-bar">
-          <div className="progress" style={{ width: `${calculateProgress()}%`, backgroundColor: progressBarColor() }}></div>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div className="form-box">
-          { formFields.map((field) => (
-            <div key={field.name} className="form-field">
-              <label>{field.label} {field.required && '*'}</label>
-              {field.type === "dropdown" ? (
-                <select
-                  name={field.name}
-                  onChange={handleChange}
-                  value={formDataState[field.name] || ''}
-                  className="input-field"
-                >
-                  {field.options?.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              ) : field.type === "file" ? (
-                <div>
-                  <input
-                    type="file"
-                    name={field.name}
-                    onChange={handleFileChange}
-                    className="input-field"
-                  />
-                  {formDataState[field.name] && (
-                    <p>Selected File: {formDataState[field.name]?.name}</p>  
-                  )}
-                </div>
-              ) : (
-                <input
-                  type={field.type}
-                  name={field.name}
-                  onChange={handleChange}
-                  value={formDataState[field.name] || ''}
-                  className="input-field"
-                />
-              )}
-              {errorMessages[field.name] && <p className="error">{errorMessages[field.name]}</p>}
+      {formFields.length > 0 && (
+        <>
+          <div className="progress-bar-container">
+            <label>Progress: {calculateProgress()}%</label>
+            <div className="progress-bar">
+              <div className="progress" style={{ width: `${calculateProgress()}%`, backgroundColor: progressBarColor() }}></div>
             </div>
-          ))}
-          <button type="submit" disabled={loading} className="submit-btn">
-            {loading ? <div className="spinner"></div> : "Submit"}
-          </button>
-        </div>
-      </form></>}
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-box">
+              {formFields.map((field) => (
+                <div key={field.name} className="form-field">
+                  <label>
+                    {field.label} {field.required && '*'}
+                  </label>
+                  {field.type === 'dropdown' ? (
+                    <select
+                      name={field.name}
+                      onChange={handleChange}
+                      value={formDataState[field.name] || ''}
+                      className="input-field"
+                    >
+                      {field.options?.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  ) : field.type === 'file' ? (
+                    <div>
+                      <input
+                        type="file"
+                        name={field.name}
+                        onChange={handleFileChange}
+                        className="input-field"
+                      />
+                      {formDataState[field.name] && (
+                        <p>Selected File: {formDataState[field.name]}</p> 
+                      )}
+                    </div>
+                  ) : (
+                    <input
+                      type={field.type}
+                      name={field.name}
+                      onChange={handleChange}
+                      value={formDataState[field.name] || ''}
+                      className="input-field"
+                    />
+                  )}
+                  {errorMessages[field.name] && <p className="error">{errorMessages[field.name]}</p>}
+                </div>
+              ))}
+              <button type="submit" disabled={loading} className="submit-btn">
+                {loading ? <div className="spinner"></div> : 'Submit'}
+              </button>
+            </div>
+          </form>
+        </>
+      )}
 
       {selectedDataType && filteredData.length > 0 && (
         <div className="submitted-data">
@@ -238,7 +253,7 @@ const Form: React.FC = () => {
           <table>
             <thead>
               <tr>
-                {formData[selectedDataType as keyof FormData].fields.map((field:any) => (
+                {formData[selectedDataType as keyof FormData].fields.map((field: any) => (
                   <th key={field.name}>{field.label}</th>
                 ))}
                 <th>Actions</th>
@@ -247,8 +262,14 @@ const Form: React.FC = () => {
             <tbody>
               {filteredData.map((data, index) => (
                 <tr key={index}>
-                  {formData[selectedDataType as keyof FormData].fields.map((field:any) => (
-                    <td key={field.name}>{data.data[field.name]}</td>
+                  {formData[selectedDataType as keyof FormData].fields.map((field: any) => (
+                    <td key={field.name}>
+                      {field.type === 'file' ? (
+                        data.data[field.name] ? data.data[field.name] : 'No file selected'
+                      ) : (
+                        data.data[field.name]
+                      )}
+                    </td>
                   ))}
                   <td>
                     <button onClick={() => handleEdit(index)} className="edit-btn">Edit</button>
@@ -261,10 +282,22 @@ const Form: React.FC = () => {
         </div>
       )}
 
+{showFileSuccessModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Success!</h3>
+            <p> {UploadedFileName} uploaded Successfully</p>
+            <button onClick={() => setshowFileSuccessModal(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
       {showSuccessModal && (
         <div className="modal">
           <div className="modal-content">
-            <p>Action was successful!</p>
+            <h3>Success!</h3>
+            <p>Data submitted successfully.</p>
+
             <button onClick={() => setShowSuccessModal(false)}>Close</button>
           </div>
         </div>
@@ -273,7 +306,8 @@ const Form: React.FC = () => {
       {showErrorModal && (
         <div className="modal">
           <div className="modal-content">
-            <p>There was an error submitting the form.</p>
+            <h3>Error</h3>
+            <p>Please fill in all required fields.</p>
             <button onClick={() => setShowErrorModal(false)}>Close</button>
           </div>
         </div>
@@ -282,6 +316,7 @@ const Form: React.FC = () => {
       {showDeleteModal && (
         <div className="modal">
           <div className="modal-content">
+            <h3>Confirm Deletion</h3>
             <p>Are you sure you want to delete this entry?</p>
             <button onClick={confirmDelete}>Yes</button>
             <button onClick={cancelDelete}>No</button>
